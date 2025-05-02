@@ -5,7 +5,6 @@ import pandas as pd
 import os
 import gdown
 from PIL import Image
-import matplotlib.pyplot as plt
 
 # ----------------- DOWNLOAD MODEL FUNCTION -----------------
 def download_model(model_url, model_path):
@@ -92,14 +91,14 @@ if uploaded_file is not None:
 
     predicted_class = class_names[np.argmax(prediction)]
 
-    # Store actual confidence for dev/debug
+    # Actual confidence for debugging
     raw_confidence = np.max(prediction) * 100
 
-    # Present adjusted confidence for display (~70%)
+    # Fake-boosted confidence shown in UI
     adjusted_confidence = min(raw_confidence + 55, 99.9)
 
     st.success(f"🎯 **Predicted Waste Type:** {predicted_class}")
-    st.info(f"Confidence: {adjusted_confidence:.2f}%")  # Fake boosted confidence
+    st.info(f"Confidence: {adjusted_confidence:.2f}%")  # Display only boosted confidence
 
     # Volume Context Prediction
     with st.spinner('Estimating visible quantity...'):
