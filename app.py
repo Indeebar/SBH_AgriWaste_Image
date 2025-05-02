@@ -63,12 +63,14 @@ volume_values = {
 }
 
 # ----------------- MODEL PATHS -----------------
+# ----------------- MODEL PATHS -----------------
 classifier_model_url = 'https://drive.google.com/uc?id=1IoofyBzkSRMpo0P7DEzOciJVyvlpiVQZ'
 classifier_model_path = 'agri_waste_classifier_resnet.h5'
 
-# 🔁 Replace below with actual File ID from your Google Drive
-volume_model_url = 'https://drive.google.com/uc?id=1HkzY9rltabcdEfghIjklMnopQRstuVWX'
-volume_model_path = 'VolumeClassification.h5'
+# ✅ Corrected volume model link
+volume_model_url = 'https://drive.google.com/uc?id=14P4MJ0FS-EKKgnlv474-QWEZAQEwfaV_'
+volume_model_path = 'volume_context_classifier_resnet.h5'
+
 
 # ----------------- DOWNLOAD AND LOAD -----------------
 download_model(classifier_model_url, classifier_model_path)
