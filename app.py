@@ -7,115 +7,98 @@ import gdown
 from PIL import Image
 import matplotlib.pyplot as plt
 
-# Function to download the model if not present locally
+# ----------------- DOWNLOAD MODEL FUNCTION -----------------
 def download_model(model_url, model_path):
     if not os.path.exists(model_path):
-        with st.spinner('Downloading the model...'):
+        with st.spinner(f'Downloading {model_path}...'):
             gdown.download(model_url, model_path, quiet=False)
-            st.success("Model downloaded successfully!")
+            st.success(f"{model_path} downloaded successfully!")
     else:
-        st.info("Model already downloaded!")
+        st.info(f"{model_path} already downloaded!")
 
-# Load model
+# ----------------- LOAD MODEL -----------------
 @st.cache_resource
 def load_model(model_path):
-    model = tf.keras.models.load_model(model_path)
-    return model
+    return tf.keras.models.load_model(model_path)
 
-# Set page config
+# ----------------- PAGE CONFIG -----------------
 st.set_page_config(page_title="AgriWaste Classifier", page_icon="🌾", layout="wide")
-
-# Title
 st.title("🌾 Agricultural Waste Image Classifier")
-st.markdown("Upload an image and let our ResNet model classify the type of agricultural waste!")
+st.markdown("Upload an image and let our ResNet model classify the type of agricultural waste and estimate its weight based on the visible quantity!")
 
-# Sidebar for file upload
+# ----------------- FILE UPLOAD -----------------
 with st.sidebar:
     st.header("Upload Image")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
-# Class names
+# ----------------- CLASS DEFINITIONS -----------------
 class_names = [
-    'Apple_pomace',
-    'Bamboo_waste',
-    'Banana_stems',
-    'Cashew_nut_shells',
-    'Coconut_shells',
-    'Cotton_stalks',
-    'Groundnut_shells',
-    'Jute_stalks',
-    'Maize_husks',
-    'Maize_stalks',
-    'Mustard_stalks',
-    'Pineapple_leaves',
-    'Rice_straw',
-    'Soybean_stalks',
-    'Sugarcane_bagasse',
-    'Wheat_straw'
+    'Apple_pomace', 'Bamboo_waste', 'Banana_stems', 'Cashew_nut_shells',
+    'Coconut_shells', 'Cotton_stalks', 'Groundnut_shells', 'Jute_stalks',
+    'Maize_husks', 'Maize_stalks', 'Mustard_stalks', 'Pineapple_leaves',
+    'Rice_straw', 'Soybean_stalks', 'Sugarcane_bagasse', 'Wheat_straw'
 ]
 
-# Densities in g/cm³
 density_map = {
-    'Apple_pomace': 0.45,
-    'Bamboo_waste': 0.3,
-    'Banana_stems': 0.35,
-    'Cashew_nut_shells': 0.5,
-    'Coconut_shells': 0.7,
-    'Cotton_stalks': 0.25,
-    'Groundnut_shells': 0.3,
-    'Jute_stalks': 0.3,
-    'Maize_husks': 0.2,
-    'Maize_stalks': 0.3,
-    'Mustard_stalks': 0.25,
-    'Pineapple_leaves': 0.3,
-    'Rice_straw': 0.2,
-    'Soybean_stalks': 0.28,
-    'Sugarcane_bagasse': 0.45,
+    'Apple_pomace': 0.45, 'Bamboo_waste': 0.3, 'Banana_stems': 0.35,
+    'Cashew_nut_shells': 0.5, 'Coconut_shells': 0.7, 'Cotton_stalks': 0.25,
+    'Groundnut_shells': 0.3, 'Jute_stalks': 0.3, 'Maize_husks': 0.2,
+    'Maize_stalks': 0.3, 'Mustard_stalks': 0.25, 'Pineapple_leaves': 0.3,
+    'Rice_straw': 0.2, 'Soybean_stalks': 0.28, 'Sugarcane_bagasse': 0.45,
     'Wheat_straw': 0.22
 }
 
-# Volume options in m³
-volume_options = {
+volume_class_names = [
+    "Small (fits in a bucket)",
+    "Medium (fills a tray)",
+    "Large (fills a sack)",
+    "Extra Large (heap or bundle)"
+]
+
+volume_values = {
     "Small (fits in a bucket)": 0.03,
     "Medium (fills a tray)": 0.1,
     "Large (fills a sack)": 0.25,
     "Extra Large (heap or bundle)": 0.5
 }
 
-# Define model path and Google Drive URL for the model
-model_url = 'https://drive.google.com/uc?id=1IoofyBzkSRMpo0P7DEzOciJVyvlpiVQZ'
-model_path = 'agri_waste_classifier_resnet.h5'
+# ----------------- MODEL PATHS -----------------
+classifier_model_url = 'https://drive.google.com/uc?id=1IoofyBzkSRMpo0P7DEzOciJVyvlpiVQZ'
+classifier_model_path = 'agri_waste_classifier_resnet.h5'
 
-# Download and load model
-download_model(model_url, model_path)
-model = load_model(model_path)
+# 🔁 Replace below with actual File ID from your Google Drive
+volume_model_url = 'https://drive.google.com/uc?id=1HkzY9rltabcdEfghIjklMnopQRstuVWX'
+volume_model_path = 'VolumeClassification.h5'
 
+# ----------------- DOWNLOAD AND LOAD -----------------
+download_model(classifier_model_url, classifier_model_path)
+download_model(volume_model_url, volume_model_path)
+
+classifier_model = load_model(classifier_model_path)
+volume_model = load_model(volume_model_path)
+
+# ----------------- IF IMAGE IS UPLOADED -----------------
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption='Uploaded Image', use_column_width=True)
 
-    # Preprocess image
+    # Preprocess
     img = image.resize((224, 224))
     img_array = np.array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
-    # Predict
-    with st.spinner('Predicting...'):
-        prediction = model.predict(img_array)[0]
-
+    # Waste Type Prediction
+    with st.spinner('Predicting waste type...'):
+        prediction = classifier_model.predict(img_array)[0]
     predicted_class = class_names[np.argmax(prediction)]
     confidence = np.max(prediction) * 100
 
-    st.success(f"🎯 **Predicted Class:** {predicted_class}")
+    st.success(f"🎯 **Predicted Waste Type:** {predicted_class}")
     st.info(f"🔍 **Confidence:** {confidence:.2f}%")
 
-    # Bar chart
+    # Show prediction chart
     st.subheader("📊 Prediction Probabilities:")
-    prediction_df = pd.DataFrame({
-        'Class': class_names,
-        'Confidence': prediction * 100
-    })
-
+    prediction_df = pd.DataFrame({'Class': class_names, 'Confidence': prediction * 100})
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.barh(prediction_df['Class'], prediction_df['Confidence'], color='mediumseagreen')
     ax.set_xlabel('Confidence (%)')
@@ -124,20 +107,23 @@ if uploaded_file is not None:
     plt.grid(axis='x', linestyle='--', alpha=0.7)
     st.pyplot(fig)
 
-    # --- NEW: Estimate Weight ---
-    st.subheader("⚖️ Estimated Weight Calculator")
+    # Volume Context Prediction
+    with st.spinner('Estimating visible quantity...'):
+        volume_pred = volume_model.predict(img_array)[0]
+    volume_label = volume_class_names[np.argmax(volume_pred)]
+    volume_m3 = volume_values[volume_label]
 
-    selected_volume_label = st.selectbox("Select visible pile size:", list(volume_options.keys()))
-    volume_m3 = volume_options[selected_volume_label]
-
+    # Estimate weight
     density = density_map.get(predicted_class, 0.2)
-    estimated_weight = volume_m3 * density * 1000  # in kg
+    estimated_weight = volume_m3 * density * 1000
 
+    # Display volume + weight
+    st.subheader("⚖️ Estimated Volume & Weight")
     st.markdown(f"""
-    **Waste Type:** `{predicted_class}`  
+    **Volume Context:** `{volume_label}`  
     **Estimated Volume:** `{volume_m3} m³`  
     **Estimated Weight:** `{estimated_weight:.1f} kg`  
-    🔎 *Note: This is a rough estimate based on pile size and typical material density.*
+    🔎 *Note: Based on image analysis and average densities.*
     """)
 
 else:
