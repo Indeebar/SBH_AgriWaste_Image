@@ -92,13 +92,13 @@ if uploaded_file is not None:
     predicted_class = class_names[np.argmax(prediction)]
 
     # Actual confidence for debugging
-    raw_confidence = np.max(prediction) * 100
+    #raw_confidence = np.max(prediction) * 100
 
-    # Fake-boosted confidence shown in UI
-    adjusted_confidence = min(raw_confidence + 55, 99.9)
+    #  confidence shown in UI
+    #adjusted_confidence = min(raw_confidence + 55, 99.9)
 
     st.success(f"🎯 **Predicted Waste Type:** {predicted_class}")
-    st.info(f"Confidence: {adjusted_confidence:.2f}%")  # Display only boosted confidence
+    #st.info(f"Confidence: {adjusted_confidence:.2f}%")  
 
     # Volume Context Prediction
     with st.spinner('Estimating visible quantity...'):
